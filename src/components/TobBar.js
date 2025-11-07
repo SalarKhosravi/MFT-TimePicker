@@ -20,6 +20,12 @@ export default function TopBar() {
                         <Nav.Link href="/timepicker">
                             Time Picker
                         </Nav.Link>
+                        <Nav.Link href="/admin">
+                            admin
+                        </Nav.Link>
+                        <Nav.Link href="/student">
+                            student
+                        </Nav.Link>
                     </Nav>
                 </Navbar.Collapse>
             </Container>
