@@ -6,6 +6,7 @@ from timepicker.models import Course, CalendarSlot  # ← مسیر را با ن�
 import random
 
 class Command(BaseCommand):
+
     help = "Seed the database with initial admin, courses, and calendar slots."
 
     def handle(self, *args, **options):
