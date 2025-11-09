@@ -1,16 +1,15 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'
-import {Button, Stack} from 'react-bootstrap';
+
+import Topbar from './components/Topbar';
 
 function App() {
-
-
   return (
-    <>
-        <Button variant="success">
-            test
-        </Button>
-    </>
+    <div className='container-fluid mx-auto'>
+      <div>
+        <Topbar />
+      </div>
+    </div>
   )
 }
 
