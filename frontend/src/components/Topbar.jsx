@@ -11,10 +11,10 @@ export default function Topbar() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link href="#home">Home</Nav.Link>
-              <Nav.Link href="#home">Students</Nav.Link>
-              <Nav.Link href="#home">Courses</Nav.Link>
-              <Nav.Link href="#home">Timetables</Nav.Link>
+              <Nav.Link href="/">Home</Nav.Link>
+              <Nav.Link href="/students">Students</Nav.Link>
+              <Nav.Link href="/courses">Courses</Nav.Link>
+              <Nav.Link href="/calenders">Calenders</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
