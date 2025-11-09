@@ -1,12 +1,19 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Course, CalendarSlot, StudentPick
-from .serializers import CourseSerializer, CalendarSlotSerializer, StudentPickSerializer
+from .models import Course, CalendarSlot, StudentPick, Student
+from .serializers import CourseSerializer, CalendarSlotSerializer, StudentPickSerializer, StudentSerializer
 from django.shortcuts import get_object_or_404
 
 DAYS = ["saturday", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 TIMES = ["3-5", "5-7", "7-9"]
+
+class StudentViewSet(viewsets.ModelViewSet):
+    """
+    Student endpoints: list, create, retrieve, update, destroy
+    """
+    queryset = Student.objects.all().order_by('-created_at')
+    serializer_class = StudentSerializer
 
 class CourseViewSet(viewsets.ModelViewSet):
     """
@@ -65,30 +72,30 @@ class CalendarSlotViewSet(viewsets.ReadOnlyModelViewSet):
 class StudentPickViewSet(viewsets.ModelViewSet):
     """
     Create a StudentPick:
-      POST /api/picks/  with { calendar_slot: slot_id, name: '', phone: '' }
-    On create: check slot.status; prevent duplicate same name+phone for same slot; update slot.count.
+      POST /api/picks/  with { calendar_slot: slot_id, student: student_id }
+    On create: check slot.status; prevent duplicate same student for same slot; update slot.count.
     """
     queryset = StudentPick.objects.all().order_by('-id')
     serializer_class = StudentPickSerializer
 
     def create(self, request, *args, **kwargs):
         slot_id = request.data.get('calendar_slot')
-        name = request.data.get('name')
-        phone = request.data.get('phone')
+        student_id = request.data.get('student')
 
-        if not slot_id or not name or not phone:
-            return Response({'error': 'calendar_slot, name and phone are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not slot_id or not student_id:
+            return Response({'error': 'calendar_slot and student are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         slot = get_object_or_404(CalendarSlot, id=slot_id)
+        student = get_object_or_404(Student, id=student_id)
 
         if not slot.status:
             return Response({'error': 'Slot is not available'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # prevent duplicate pick by same guest for same slot
-        if StudentPick.objects.filter(calendar_slot=slot, name=name, phone=phone).exists():
+        # prevent duplicate pick by same student for same slot
+        if StudentPick.objects.filter(calendar_slot=slot, student=student).exists():
             return Response({'error': 'You already picked this slot'}, status=status.HTTP_400_BAD_REQUEST)
 
-        pick = StudentPick.objects.create(calendar_slot=slot, name=name, phone=phone)
+        pick = StudentPick.objects.create(calendar_slot=slot, student=student)
         # update count (can also be calculated dynamically)
         slot.count = slot.student_picks.count()
         slot.save()

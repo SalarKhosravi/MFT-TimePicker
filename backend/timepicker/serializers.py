@@ -1,10 +1,22 @@
 from rest_framework import serializers
-from .models import Course, CalendarSlot, StudentPick
+from .models import Course, CalendarSlot, StudentPick, Student
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'name', 'phone', 'created_at', 'updated_at']
 
 class StudentPickSerializer(serializers.ModelSerializer):
+    student = StudentSerializer(read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset=Student.objects.all(), 
+        source='student', 
+        write_only=True
+    )
+    
     class Meta:
         model = StudentPick
-        fields = ['id', 'name', 'phone', 'created_at']
+        fields = ['id', 'student', 'student_id', 'calendar_slot', 'created_at']
 
 class CalendarSlotSerializer(serializers.ModelSerializer):
     # include nested student picks
