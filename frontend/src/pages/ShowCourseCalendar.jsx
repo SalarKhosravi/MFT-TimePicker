@@ -4,10 +4,11 @@ import { Table, Button } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 
 async function handleRegisterStudentSlot(slotId, refreshData) {
+    const student_id = localStorage.getItem('student_id');
     try {
         const result = await apiService("post", `/register-slot/`, {
             calendar_slot: slotId,
-            student: 2
+            student: student_id
         });
 
         console.log(result);

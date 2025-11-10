@@ -19,6 +19,11 @@ class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all().order_by('-created_at')
     serializer_class = StudentSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        student = self.get_object()
+        student.delete()
+        return Response({"ok": True, "message": "Student deleted successfully"}, status=status.HTTP_200_OK)
+
 class CourseViewSet(viewsets.ModelViewSet):
     """
     Course endpoints: list, create, retrieve, update, destroy

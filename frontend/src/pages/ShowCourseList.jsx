@@ -38,7 +38,7 @@ export default function ShowCourseList() {
           </div>
           <div className="row mx-auto">
               {courses.map((course) => (
-                  <div className="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 xol-xxl-1 p-1">
+                  <div className="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 xol-xxl-1 p-1" key={course.id}>
                       <Button
                           onClick={ () => { goToCourseCalendar(course.id) }}
                           key={course.id}

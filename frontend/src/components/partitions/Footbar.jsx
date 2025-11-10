@@ -1,8 +1,5 @@
-import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
 import {Link} from 'react-router-dom';
-
 
 export default function Footbar() {
     return (
@@ -27,13 +24,12 @@ export default function Footbar() {
                             <p className="py-1">Courses</p>
                         </div>
                     </Nav.Link>
-                    <Nav.Link as={Link} to="/students" className="col-3 text-center pt-3">
+                    <Nav.Link as={Link} to="/students-logout"  className="col-3 text-center pt-3" >
                         <div>
                             <i className="bi bi-person-circle h3"></i>
-                            <p className="py-1">Time</p>
+                            <p className="py-1">Logout</p>
                         </div>
                     </Nav.Link>
-
                 </div>
             </div>
         </div>

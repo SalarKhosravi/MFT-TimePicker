@@ -2,11 +2,17 @@ from django.contrib import admin
 from .models import Course, CalendarSlot, StudentPick, Student
 
 
+class StudentPickInlineForStudent(admin.TabularInline):
+    model = StudentPick
+    extra = 0
+    readonly_fields = ('calendar_slot',)
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "phone", "created_at", "updated_at")
     search_fields = ("name", "phone")
     ordering = ("-created_at",)
+    inlines = [StudentPickInlineForStudent]
 
 class StudentPickInline(admin.TabularInline):
     model = StudentPick
