@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
-
 from .models import Course, CalendarSlot, StudentPick, Student
-from .serializers import CourseSerializer, CalendarSlotSerializer, StudentPickSerializer, StudentSerializer
+from .serializers import CourseSerializer, CalendarSlotSerializer, StudentSerializer, StudentPickSerializer, RegisterSlotSerializer
 from django.shortcuts import get_object_or_404
 
 DAYS = ["saturday", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
@@ -16,6 +15,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     """
     Student endpoints: list, create, retrieve, update, destroy
     """
+    permission_classes = [AllowAny]
     queryset = Student.objects.all().order_by('-created_at')
     serializer_class = StudentSerializer
 
@@ -24,6 +24,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     Course endpoints: list, create, retrieve, update, destroy
     When creating a Course, default 7x3 CalendarSlot rows are created automatically.
     """
+    permission_classes = [AllowAny]
     queryset = Course.objects.all().order_by('-created_at')
     serializer_class = CourseSerializer
 
@@ -50,77 +51,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         slots.update(status=True, count=0)
         return Response({'ok': True})
 
-from collections import defaultdict
-
-class CalendarSlotViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Read-only list/retrieve for slots.
-    Additional actions:
-      - toggle_status (PATCH) -> toggles active/inactive
-      - students (GET) -> list students for the slot
-    """
-    queryset = CalendarSlot.objects.all().select_related('course').prefetch_related('student_picks')
-    serializer_class = CalendarSlotSerializer
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
-
-        grouped = defaultdict(list)
-        for item in data:
-            course_id = str(item['course'])
-            grouped[course_id].append(item)
-
-        return Response(grouped)
-
-    @action(detail=True, methods=['patch'])
-    def toggle_status(self, request, pk=None):
-        slot = self.get_object()
-        slot.status = not slot.status
-        slot.save()
-        return Response(CalendarSlotSerializer(slot).data)
-
-    @action(detail=True, methods=['get'])
-    def students(self, request, pk=None):
-        slot = self.get_object()
-        students = slot.student_picks.all()
-        return Response(StudentPickSerializer(students, many=True).data)
-
-
-class StudentPickViewSet(viewsets.ModelViewSet):
-    """
-    Create a StudentPick:
-      POST /api/picks/  with { calendar_slot: slot_id, student: student_id }
-    On create: check slot.status; prevent duplicate same student for same slot; update slot.count.
-    """
-    queryset = StudentPick.objects.all().order_by('-id')
-    serializer_class = StudentPickSerializer
-
-    def create(self, request, *args, **kwargs):
-        slot_id = request.data.get('calendar_slot')
-        student_id = request.data.get('student')
-
-        if not slot_id or not student_id:
-            return Response({'error': 'calendar_slot and student are required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        slot = get_object_or_404(CalendarSlot, id=slot_id)
-        student = get_object_or_404(Student, id=student_id)
-
-        if not slot.status:
-            return Response({'error': 'Slot is not available'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # prevent duplicate pick by same student for same slot
-        if StudentPick.objects.filter(calendar_slot=slot, student=student).exists():
-            return Response({'error': 'You already picked this slot'}, status=status.HTTP_400_BAD_REQUEST)
-
-        pick = StudentPick.objects.create(calendar_slot=slot, student=student)
-        # update count (can also be calculated dynamically)
-        slot.count = slot.student_picks.count()
-        slot.save()
-
-        return Response(StudentPickSerializer(pick).data, status=status.HTTP_201_CREATED)
-
 class ShowCourseCalendarApiView(APIView):
     permission_classes = [AllowAny]
 
@@ -136,3 +66,38 @@ class ShowCourseCalendarApiView(APIView):
         response_data = course_serializer.data
         response_data['calendar_slots'] = slots_serializer.data
         return Response(response_data, status=200)
+
+class RegisterStudentSlotApiView(APIView):
+    """
+    Register a student in a calendar slot:
+    POST /api/register-slot/
+    Body: { "calendar_slot": slot_id, "student_id": student_id }
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSlotSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        slot_id = serializer.validated_data['calendar_slot']
+        student_id = serializer.validated_data['student']
+
+        slot = get_object_or_404(CalendarSlot, id=slot_id)
+        student = get_object_or_404(Student, id=student_id)
+
+        # بررسی فعال بودن slot
+        if not slot.status:
+            return Response({"error": "Slot is not available"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # جلوگیری از ثبت تکراری
+        if StudentPick.objects.filter(calendar_slot=slot, student=student).exists():
+            return Response({"error": "Student already registered for this slot"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # ثبت pick
+        pick = StudentPick.objects.create(calendar_slot=slot, student=student)
+        slot.count = slot.student_picks.count()
+        slot.save()
+
+        return Response({"success": True, "pick_id": pick.id}, status=status.HTTP_201_CREATED)

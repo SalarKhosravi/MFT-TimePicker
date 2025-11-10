@@ -61,3 +61,4 @@ class StudentPick(models.Model):
 
     def __str__(self):
         return f"{self.student.name} ({self.calendar_slot.course})"
+

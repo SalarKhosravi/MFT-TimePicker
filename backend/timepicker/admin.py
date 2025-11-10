@@ -8,6 +8,11 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ("name", "phone")
     ordering = ("-created_at",)
 
+class StudentPickInline(admin.TabularInline):
+    model = StudentPick
+    extra = 0
+    readonly_fields = ('created_at', 'updated_at')
+
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
@@ -19,9 +24,14 @@ class CourseAdmin(admin.ModelAdmin):
 @admin.register(CalendarSlot)
 class CalendarSlotAdmin(admin.ModelAdmin):
     list_display = ("id", "course", "day", "time", "status", "count", "created_at", "updated_at")
+    list_editable = ("status",)
     list_filter = ("day", "status", "course")
     search_fields = ("course__title",)
     ordering = ("id",)
+
+    inlines = [StudentPickInline]
+
+
 
 
 @admin.register(StudentPick)

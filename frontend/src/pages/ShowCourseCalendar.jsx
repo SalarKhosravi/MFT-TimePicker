@@ -1,32 +1,49 @@
 import { useEffect, useState } from "react";
 import apiService from "@/services/apiService.js";
 import { Table, Button } from "react-bootstrap";
-
 import { useParams } from "react-router-dom";
+
+async function handleRegisterStudentSlot(slotId, refreshData) {
+    try {
+        const result = await apiService("post", `/register-slot/`, {
+            calendar_slot: slotId,
+            student: 2
+        });
+
+        console.log(result);
+        alert("Slot registered successfully!");
+        refreshData();
+    } catch (err) {
+        console.error(err);
+        alert(err?.response?.data?.error || "Failed to register slot");
+    }
+}
 
 export default function ShowCourseCalendar() {
     const { id } = useParams();
-
     const [courseCalendar, setCourseCalendar] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const result = await apiService("get",  `/course/calendar/${id}`); // your endpoint
-            if (result.data) {
-                setCourseCalendar(result.data);
-            } else {
-                setError(result.error);
-            }
+    const fetchCalendar = async () => {
+        setLoading(true);
+        try {
+            const result = await apiService("get", `/course/calendar/${id}`);
+            if (result.data) setCourseCalendar(result.data);
+            else setError(result.error);
+        } catch (err) {
+            setError(err);
+        } finally {
             setLoading(false);
-        };
-        fetchData();
-    }, []);
+        }
+    };
+
+    useEffect(() => {
+        fetchCalendar();
+    }, [id]);
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error loading data {error.message}</div>;
-
 
     const days = [...new Set(courseCalendar.calendar_slots.map(s => s.day))];
     const times = [...new Set(courseCalendar.calendar_slots.map(s => s.time))];
@@ -40,9 +57,7 @@ export default function ShowCourseCalendar() {
     return (
         <div>
             <div className="d-inline-block bg-primary my-0 mb-5 py-2 ps-4 pe-5 rounded-end-5">
-                <p className="p-0 m-0 h4">
-                    {courseCalendar.title}
-                </p>
+                <p className="p-0 m-0 h4">{courseCalendar.title}</p>
             </div>
 
             <div className="mx-auto" style={{ maxWidth: "700px" }}>
@@ -50,7 +65,9 @@ export default function ShowCourseCalendar() {
                     <thead>
                     <tr>
                         <th></th>
-                        {times.map(time => <th className="text-center" key={time}>{time}</th>)}
+                        {times.map(time => (
+                            <th className="text-center" key={time}>{time}</th>
+                        ))}
                     </tr>
                     </thead>
                     <tbody>
@@ -67,11 +84,10 @@ export default function ShowCourseCalendar() {
                                                 disabled={!slot.status}
                                                 size="sm"
                                                 className="w-100"
-                                                style={{maxWidth:'100px'}}
+                                                style={{ maxWidth: "100px" }}
+                                                onClick={() => handleRegisterStudentSlot(slot.id, fetchCalendar)}
                                             >
-                                                {slot.status ? "" : "..."}
-                                                {slot.status ? slot.count : ""}
-
+                                                {slot.status ? `${slot.id} [${slot.count}]` : "..."}
                                             </Button>
                                         ) : (
                                             <Button variant="secondary" disabled size="sm">

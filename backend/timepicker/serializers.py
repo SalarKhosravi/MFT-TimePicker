@@ -18,7 +18,6 @@ class StudentPickSerializer(serializers.ModelSerializer):
         model = StudentPick
         fields = ['id', 'student', 'student_id', 'calendar_slot', 'created_at']
 
-
 class CalendarSlotSerializer(serializers.ModelSerializer):
     # include nested student picks
     student_picks = StudentPickSerializer(many=True, read_only=True)
@@ -46,3 +45,6 @@ class CourseSerializer(serializers.ModelSerializer):
                 "calendar": data["calendar_slots"]
             }
 
+class RegisterSlotSerializer(serializers.Serializer):
+    calendar_slot = serializers.IntegerField()
+    student = serializers.IntegerField()
